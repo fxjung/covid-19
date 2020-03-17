@@ -1,6 +1,7 @@
 *.png
 *.pdf
 *.xls
+*.xlsx
 *.ipynb
 
 # source: https://github.com/github/gitignore/blob/master/Python.gitignore

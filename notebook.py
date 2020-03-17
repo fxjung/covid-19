@@ -69,7 +69,7 @@ data = Path("data")
 data.mkdir(exist_ok=True)
 assert data.exists()
 
-xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xls"
+xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xlsx"
 url = "http://www.ecdc.europa.eu/sites/default/files/documents/" + xlsname
 print(f"Trying to download from {url}")
 try:
@@ -83,16 +83,26 @@ except urllib.request.HTTPError as e:
     else:
         raise
 
-sorted_paths = sorted(data.glob("*.xls"), key=os.path.getmtime)
+sorted_paths = sorted(data.glob("*.xls*"), key=os.path.getmtime)
 print("\navailable files:\n" + "\n".join(map(str, sorted_paths)) + "\n")
 
 xlspath = sorted_paths[-1]
 print(f"selected file: {xlspath}")
 # -
 
+df.tail()
 
 # +
 df = pd.read_excel(xlspath, parse_dates=["DateRep"])
+df.rename(
+    {
+        "Countries and territories": "CountryExp",
+        "Cases": "NewConfCases",
+        "Deaths": "NewDeaths",
+    },
+    inplace=True,
+    axis=1,
+)
 df.loc[:, "CountryExp"] = df["CountryExp"].apply(lambda x: x[0].upper() + x[1:])
 df.set_index(["CountryExp", "DateRep"], inplace=True)
 df.sort_values(["CountryExp", "DateRep"], inplace=True)
@@ -108,7 +118,6 @@ df["growth_factor_deaths"] = df.groupby("CountryExp", group_keys=False).apply(
 # -
 
 # # Plots by Country
-
 
 # +
 tasks = [
