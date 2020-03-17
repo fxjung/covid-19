@@ -61,13 +61,13 @@ os.getcwd()
 # # Preprocessing
 # ## Downloading Data
 
+# day_to_download = pd.Timestamp('2020-03-16')
+day_to_download = pd.Timestamp.now()
+
 # +
 data = Path("data")
 data.mkdir(exist_ok=True)
 assert data.exists()
-
-# day_to_download = pd.Timestamp('2020-03-16')
-day_to_download = pd.Timestamp.now()
 
 xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xls"
 url = "http://www.ecdc.europa.eu/sites/default/files/documents/" + xlsname
@@ -88,6 +88,8 @@ print("\navailable files:\n" + "\n".join(map(str, sorted_paths)) + "\n")
 
 xlspath = sorted_paths[-1]
 print(f"selected file: {xlspath}")
+# -
+
 
 # +
 df = pd.read_excel(xlspath, parse_dates=["DateRep"])
