@@ -20,7 +20,16 @@ setup(
     # ],
     zip_safe=False,
     # packages=find_packages(exclude=['tests']),
-    install_requires=["numpy", "pandas", "black", "jupyter", "scipy",'seaborn', 'scipy'],
+    install_requires=[
+        "numpy",
+        "pandas",
+        "black",
+        "jupyter",
+        "scipy",
+        "seaborn",
+        "scipy",
+        "jupytext",
+    ],
     author="Felix Jung",
     author_email="felix.jung@ds.mpg.de",
 )

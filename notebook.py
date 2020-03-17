@@ -50,7 +50,7 @@ pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
 
 sns.set(color_codes=True, font_scale=1.5)
-sns.set_style("ticks",)
+sns.set_style("ticks")
 
 evf = lambda S, f, **arg: (S, f(S, **arg))
 
@@ -118,17 +118,17 @@ tasks = [
             "France",
             "Austria",
             "Switzerland",
-        ],
+        ]
     },
-    {"countries": ["Germany", "Italy", "South Korea",],},
+    {"countries": ["Germany", "Italy", "South Korea"]},
     {
-        "countries": ["Germany",],
+        "countries": ["Germany"],
         "interpolate": True,
         "extrapolate": True,
         "show_events": True,
     },
     {
-        "countries": ["Italy",],
+        "countries": ["Italy"],
         "interpolate": True,
         "extrapolate": True,
         "show_events": True,
@@ -145,7 +145,7 @@ events = {
         ("2020-03-15", "borders shut"),
         ("2020-03-17", "public shutdown"),
     ],
-    "Italy": [("2020-03-9", "lockdown"),],
+    "Italy": [("2020-03-9", "lockdown")],
 }
 
 
@@ -309,17 +309,25 @@ for task in tasks:
 # # Plots China vs World
 
 # +
-data_world = df.drop('China').groupby("DateRep").sum()
+data_world = df.drop("China").groupby("DateRep").sum()
 data_world.loc[:, "total_cases"] = data_world["NewConfCases"].cumsum()
 data_world.loc[:, "total_deaths"] = data_world["NewDeaths"].cumsum()
-data_world["growth_factor_cases"] = data_world["NewConfCases"] / data_world["NewConfCases"].shift(1)
-data_world["growth_factor_deaths"] = data_world["NewDeaths"] / data_world["NewDeaths"].shift(1)
+data_world["growth_factor_cases"] = data_world["NewConfCases"] / data_world[
+    "NewConfCases"
+].shift(1)
+data_world["growth_factor_deaths"] = data_world["NewDeaths"] / data_world[
+    "NewDeaths"
+].shift(1)
 
-data_china = df.loc['China'].copy()
+data_china = df.loc["China"].copy()
 data_china.loc[:, "total_cases"] = data_china["NewConfCases"].cumsum()
 data_china.loc[:, "total_deaths"] = data_china["NewDeaths"].cumsum()
-data_china["growth_factor_cases"] = data_china["NewConfCases"] / data_china["NewConfCases"].shift(1)
-data_china["growth_factor_deaths"] = data_china["NewDeaths"] / data_china["NewDeaths"].shift(1)
+data_china["growth_factor_cases"] = data_china["NewConfCases"] / data_china[
+    "NewConfCases"
+].shift(1)
+data_china["growth_factor_deaths"] = data_china["NewDeaths"] / data_china[
+    "NewDeaths"
+].shift(1)
 
 fig, axs = plt.subplots(4, 2, figsize=(2 * 8, 4 * 6))
 style = "X:"
@@ -394,15 +402,8 @@ for ax_ in axs:
 
 fig.tight_layout()
 for ext in ["pdf", "png"]:
-    fig.savefig(
-        f"linlog_world.{ext}", dpi=200,
-    )
+    fig.savefig(f"linlog_world.{ext}", dpi=200)
 # -
-
-
-
-
-
 
 
 plt.plot(
@@ -415,9 +416,3 @@ plt.plot(
     )
 )
 plt.gca().set_yscale("log")
-
-
-
-
-
-
