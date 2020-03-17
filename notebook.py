@@ -88,9 +88,6 @@ print("\navailable files:\n" + "\n".join(map(str, sorted_paths)) + "\n")
 
 xlspath = sorted_paths[-1]
 print(f"selected file: {xlspath}")
-# -
-
-df.tail()
 
 # +
 df = pd.read_excel(xlspath, parse_dates=["DateRep"])
@@ -115,7 +112,9 @@ df["growth_factor_cases"] = df.groupby("CountryExp", group_keys=False).apply(
 df["growth_factor_deaths"] = df.groupby("CountryExp", group_keys=False).apply(
     lambda df: df["NewDeaths"] / df["NewDeaths"].shift(1)
 )
+df.index.set_levels(df.index.levels[0].str.replace("_", " "), level=0, inplace=True)
 # -
+
 
 # # Plots by Country
 
@@ -334,7 +333,7 @@ for task in tasks:
 # # Plots China vs World
 
 # +
-data_world = df.drop("China").groupby("DateRep").sum()
+data_world = df.drop(df.xs("China", drop_level=False).index).groupby("DateRep").sum()
 data_world.loc[:, "total_cases"] = data_world["NewConfCases"].cumsum()
 data_world.loc[:, "total_deaths"] = data_world["NewDeaths"].cumsum()
 data_world["growth_factor_cases"] = data_world["NewConfCases"] / data_world[
