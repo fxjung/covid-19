@@ -29,6 +29,7 @@ setup(
         "seaborn",
         "scipy",
         "jupytext",
+        "pre-commit",
     ],
     author="Felix Jung",
     author_email="felix.jung@ds.mpg.de",

@@ -25,6 +25,7 @@ import urllib.request
 
 import itertools as it
 import functools as ft
+import math as m
 
 import numpy as np
 import pandas as pd
@@ -106,8 +107,21 @@ df["growth_factor_deaths"] = df.groupby("CountryExp", group_keys=False).apply(
 
 # # Plots by Country
 
+
 # +
 tasks = [
+    {
+        "countries": ["Germany"],
+        "interpolate": True,
+        "extrapolate": True,
+        "show_events": True,
+    },
+    {
+        "countries": ["Italy"],
+        "interpolate": True,
+        "extrapolate": True,
+        "show_events": True,
+    },
     {
         "countries": [
             "Germany",
@@ -121,18 +135,6 @@ tasks = [
         ]
     },
     {"countries": ["Germany", "Italy", "South Korea"]},
-    {
-        "countries": ["Germany"],
-        "interpolate": True,
-        "extrapolate": True,
-        "show_events": True,
-    },
-    {
-        "countries": ["Italy"],
-        "interpolate": True,
-        "extrapolate": True,
-        "show_events": True,
-    },
 ]
 style = "X:"
 alpha = 1
@@ -170,7 +172,10 @@ for task in tasks:
             )
     else:
         xmax = pd.Timestamp.now()
-    fig, axs = plt.subplots(4, 2, figsize=(2 * 8, 4 * (8 if event_countries else 6)))
+
+    fig, axs = plt.subplots(
+        4, 2, figsize=(2 * 8, 4 * (8 if event_countries and show_events else 6))
+    )
 
     for country in countries:
         data = df.loc[country]
@@ -211,8 +216,16 @@ for task in tasks:
             c_f = curve_fit(model, t, c, p0=(1e-5, 1e-1))
             d_f = curve_fit(model, t, d, p0=(1e-5, 1e-1))
 
-            print(c_f[0])
-            print(d_f[0])
+            lines = [
+                f"cases in {country}: {c_f[0][0]:.3e}*exp({c_f[0][1]:.3e}*t)",
+                f"deaths in {country}: {d_f[0][0]:.3e}*exp({d_f[0][1]:.3e}*t)",
+                f"doubling time cases in {country}: {m.log(2)/c_f[0][1]:2f} days",
+                f"doubling time deaths in {country}: {m.log(2)/d_f[0][1]:2f} days",
+            ]
+            dashes = "-" * max(map(len, lines))
+            lines.insert(0, dashes)
+            lines.append(dashes)
+            print("\n" + "\n".join(lines) + "\n")
 
             dt_t = pd.date_range(data.index[0], xmax)
             i_t = ((dt_t - dt_t[0]) / pd.Timedelta(days=1)).to_numpy()
@@ -305,6 +318,7 @@ for task in tasks:
             dpi=200,
         )
 # -
+
 
 # # Plots China vs World
 

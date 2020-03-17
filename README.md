@@ -5,6 +5,7 @@
 git clone git@gitlab.gwdg.de:fjung1/covid-19.git
 cd covid-19
 pip install .
+pre-commit install
 jupyter notebook
 ```
 
