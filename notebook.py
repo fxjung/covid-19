@@ -221,8 +221,8 @@ for task in tasks:
             lines = [
                 f"cases in {country}: {c_f[0][0]:.3e}*exp({c_f[0][1]:.3e}*t)",
                 f"deaths in {country}: {d_f[0][0]:.3e}*exp({d_f[0][1]:.3e}*t)",
-                f"doubling time cases in {country}: {m.log(2)/c_f[0][1]:2f} days",
-                f"doubling time deaths in {country}: {m.log(2)/d_f[0][1]:2f} days",
+                f"doubling time cases in {country}: {m.log(2)/c_f[0][1]:.2f} days",
+                f"doubling time deaths in {country}: {m.log(2)/d_f[0][1]:.2f} days",
             ]
             dashes = "-" * max(map(len, lines))
             lines.insert(0, dashes)
