@@ -118,7 +118,32 @@ df.index.set_levels(df.index.levels[0].str.replace("_", " "), level=0, inplace=T
 
 # # Plots by Country
 
+# ## Events/Countermeasures Imposed
+
 # +
+events = {
+    "Germany": [
+        ("2020-03-10", "events $>$ 1000 canceled"),
+        ("2020-03-12", "Merkel address"),
+        ("2020-03-15", "borders shut"),
+        ("2020-03-17", "public shutdown"),
+    ],
+    "Italy": [("2020-03-9", "lockdown")],
+}
+
+# the time after which the event is expected to impact the number of confirmed cases
+projected_delta = pd.Timedelta(days=12)
+# -
+
+# ## Plot Configuration
+
+# +
+# rolling mean window size in days
+window_size = 10
+
+style = "X:"
+alpha = 1
+
 tasks = [
     {
         "countries": ["Germany"],
@@ -146,20 +171,9 @@ tasks = [
     },
     {"countries": ["Germany", "Italy", "South Korea"]},
 ]
-style = "X:"
-alpha = 1
-window_size = 10
-projected_delta = pd.Timedelta(days=12)
-events = {
-    "Germany": [
-        ("2020-03-10", "events $>$ 1000 canceled"),
-        ("2020-03-12", "Merkel address"),
-        ("2020-03-15", "borders shut"),
-        ("2020-03-17", "public shutdown"),
-    ],
-    "Italy": [("2020-03-9", "lockdown")],
-}
+# -
 
+# ## Now plot:
 
 for task in tasks:
     countries = task["countries"]
@@ -327,7 +341,6 @@ for task in tasks:
             f'linlog{"_interpol" if interpolate else ""}{"_extrapol" if extrapolate else ""}{"_events" if show_events else ""}_{"_".join(df.loc[country]["GeoId"][0] for country in countries)}.{ext}',
             dpi=200,
         )
-# -
 
 
 # # Plots China vs World
