@@ -12,7 +12,7 @@ Do not use this for any actual decision making. The code is provided with no war
 
 ## Installation
 ```bash
-git clone git@gitlab.gwdg.de:fjung1/covid-19.git
+git clone git@github.com:fxjung/covid-19.git
 cd covid-19
 pip install .
 pre-commit install
