@@ -60,6 +60,7 @@ os.getcwd()
 
 # # Preprocessing
 # ## Downloading Data
+# If download fails, check correctness of the inferred link [here](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
 
 # day_to_download = pd.Timestamp('2020-03-16')
 day_to_download = pd.Timestamp.now()
@@ -69,7 +70,7 @@ data = Path("data")
 data.mkdir(exist_ok=True)
 assert data.exists()
 
-xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xlsx"
+xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xls"
 url = "http://www.ecdc.europa.eu/sites/default/files/documents/" + xlsname
 print(f"Trying to download from {url}")
 try:
@@ -140,6 +141,8 @@ projected_delta = pd.Timedelta(days=12)
 # +
 # rolling mean window size in days
 window_size = 10
+
+expfitrange = slice(-10, None)
 
 style = "X:"
 alpha = 1
@@ -233,9 +236,11 @@ for task in tasks:
 
         if interpolate or extrapolate:
             model = lambda t, a, b: a * np.exp(b * t)
-            t = ((data.index - data.index[0]) / pd.Timedelta(days=1)).to_numpy()
-            c = data["total_cases"].to_numpy()
-            d = data["total_deaths"].to_numpy()
+            t = ((data.index - data.index[0]) / pd.Timedelta(days=1)).to_numpy()[
+                expfitrange
+            ]
+            c = data["total_cases"].to_numpy()[expfitrange]
+            d = data["total_deaths"].to_numpy()[expfitrange]
 
             c_f = curve_fit(model, t, c, p0=(1e-5, 1e-1))
             d_f = curve_fit(model, t, d, p0=(1e-5, 1e-1))
