@@ -62,15 +62,15 @@ os.getcwd()
 # ## Downloading Data
 # If download fails, check correctness of the inferred link [here](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
 
-# day_to_download = pd.Timestamp('2020-03-16')
-day_to_download = pd.Timestamp.now()
+day_to_download = pd.Timestamp("2020-03-19")
+# day_to_download = pd.Timestamp.now()
 
 # +
 data = Path("data")
 data.mkdir(exist_ok=True)
 assert data.exists()
 
-xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xls"
+xlsname = f"COVID-19-geographic-disbtribution-worldwide-{day_to_download.strftime('%Y-%m-%d')}.xlsx"
 url = "http://www.ecdc.europa.eu/sites/default/files/documents/" + xlsname
 print(f"Trying to download from {url}")
 try:
