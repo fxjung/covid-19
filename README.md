@@ -1,4 +1,9 @@
 # Some Plots on Covid-19
+jupyter notebook that downloads publicly available data on the spread 
+of Covid-19 and allows for easy creation of several plots.
+
+**Note: I am not an expert in this field. There may be (severe) bugs or mistakes.
+Do not use this for any actual decision making. The code is provided with no warranty whatsoever.**
 
 ## Prerequisites
 - git
@@ -7,7 +12,7 @@
 
 ## Installation
 ```bash
-git clone git@gitlab.gwdg.de:fjung1/covid-19.git
+git clone git@github.com:fxjung/covid-19.git
 cd covid-19
 pip install .
 pre-commit install
