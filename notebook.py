@@ -465,19 +465,22 @@ for ext in ["pdf", "png"]:
 # | $E_0$ | initial number of exposed subjects |
 # | $I_0$ | initial number of infected subjects |
 # | $R_0$ | initial number of recovered subjects |
+#
+# Parameters taken from https://www.dgepi.de/assets/Stellungnahmen/Stellungnahme2020Corona_DGEpi-20200319.pdf
 
 
 # +
-beta = lambda t: (1.2 + 4.8 * np.exp(-t / 50)) / (3 * 7)
-sigma = 1 / 5
-gamma = 1 / (3 * 7)
+# beta = lambda t: (1.2 + 4.8 * np.exp(-t / 50)) / (3 * 7)
+beta = lambda t: 1.25 / 3
+sigma = 1 / 5.5
+gamma = 1 / 3
 mu = 0
 nu = 0
 
 S0 = 8e7
-E0 = 2e4
+E0 = 4e4
 I0 = 1e4
-R0 = 200
+R0 = 0
 
 t_max = 365
 
@@ -513,9 +516,10 @@ plt.plot(s["t"], s["y"][1], label="E")
 plt.plot(s["t"], s["y"][2], label="I")
 plt.plot(s["t"], s["y"][3], label="R")
 ax.legend(loc=1)
-ax.set_xlim((0, 30))
-ax.set_ylim((0, 5e4))
-# ax.set_yscale('log')
+ax.set_xlim((0, t_max))
+ax.set_ylim((1000, 80e6))
+ax.set_yscale("log")
+print(f"{max(s['y'][2]):.2g}")
 # -
 
 
