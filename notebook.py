@@ -38,6 +38,7 @@ import matplotlib.ticker as ticker
 
 from pathlib import Path
 from scipy.optimize import curve_fit
+from scipy.integrate import solve_ivp
 
 mpl.rcParams["figure.figsize"] = (8, 6)
 mpl.rcParams["font.size"] = 15
@@ -62,8 +63,8 @@ os.getcwd()
 # ## Downloading Data
 # If download fails, check correctness of the inferred link [here](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
 
-day_to_download = pd.Timestamp("2020-03-19")
-# day_to_download = pd.Timestamp.now()
+# day_to_download = pd.Timestamp("2020-03-19")
+day_to_download = pd.Timestamp.now()
 
 # +
 data = Path("data")
@@ -217,14 +218,14 @@ for task in tasks:
         (gfd,) = axs[2][1].plot(data["growth_factor_deaths"], style, alpha=alpha)
 
         axs[2][0].plot(
-            data["growth_factor_cases"].rolling(window_size, center=True).mean(),
+            data["growth_factor_cases"].rolling(window_size, center=True).median(),
             "-",
             lw=3,
             label=country,
             color=gfc.get_color(),
         )
         axs[2][1].plot(
-            data["growth_factor_deaths"].rolling(window_size, center=True).mean(),
+            data["growth_factor_deaths"].rolling(window_size, center=True).median(),
             "-",
             lw=3,
             label=country,
@@ -292,6 +293,9 @@ for task in tasks:
 
     for ax in axs[1]:
         ax.set_yscale("log")
+
+    for ax in axs[2]:
+        ax.set_ylim((0, ax.get_ylim()[1]))
 
     for ax_ in axs:
         for ax in ax_:
@@ -387,14 +391,14 @@ for data, country in zip([data_world, data_china], ["rest", "china"]):
     (gfd,) = axs[2][1].plot(data["growth_factor_deaths"], style, alpha=alpha)
 
     axs[2][0].plot(
-        data["growth_factor_cases"].rolling(window_size, center=True).mean(),
+        data["growth_factor_cases"].rolling(window_size, center=True).median(),
         "-",
         lw=3,
         label=country,
         color=gfc.get_color(),
     )
     axs[2][1].plot(
-        data["growth_factor_deaths"].rolling(window_size, center=True).mean(),
+        data["growth_factor_deaths"].rolling(window_size, center=True).median(),
         "-",
         lw=3,
         label=country,
@@ -448,13 +452,71 @@ for ext in ["pdf", "png"]:
 # -
 
 
-plt.plot(
-    *evf(
-        np.linspace(-6, 6),
-        lambda x, L, k, x0: 1 / (1 + np.exp(-k * (x - x0))),
-        L=1,
-        k=1,
-        x0=0,
+# # SEIR modeling
+#
+# | parameter | definition|
+# |---|---|
+# | $\beta$  | probability that an infected subject infects a susceptible subject times <br>the number of persons per time an infected person meets)|
+# | $\gamma$ | recovery rate|
+# | $\sigma$ | incubation rate|
+# | $\mu$	   | natural mortality rate |
+# | $\nu$	   | vaccination rate |
+# | $S_0$ | initial number of susceptible subjects |
+# | $E_0$ | initial number of exposed subjects |
+# | $I_0$ | initial number of infected subjects |
+# | $R_0$ | initial number of recovered subjects |
+
+
+# +
+beta = lambda t: (1.2 + 4.8 * np.exp(-t / 50)) / (3 * 7)
+sigma = 1 / 5
+gamma = 1 / (3 * 7)
+mu = 0
+nu = 0
+
+S0 = 8e7
+E0 = 2e4
+I0 = 1e4
+R0 = 200
+
+t_max = 365
+
+t0 = 0
+y0 = np.array((S0, E0, I0, R0))
+
+
+def seir(t, y):
+    S, E, I, R = y
+    N = S + E + I + R
+    return np.array(
+        (
+            mu * (N - S) - beta(t) * S * I / N - nu * S,
+            beta(t) * S * I / N - (mu + sigma) * E,
+            sigma * E - (mu + gamma) * I,
+            gamma * I - mu * R + nu * S,
+        )
     )
+
+
+s = solve_ivp(
+    seir,
+    (t0, t_max),
+    y0,
+    vectorized=True,
+    dense_output=True,
+    t_eval=np.linspace(0, t_max, 500),
 )
-plt.gca().set_yscale("log")
+
+fig, ax = plt.subplots(figsize=(8, 6))
+plt.plot(s["t"], s["y"][0], label="S")
+plt.plot(s["t"], s["y"][1], label="E")
+plt.plot(s["t"], s["y"][2], label="I")
+plt.plot(s["t"], s["y"][3], label="R")
+ax.legend(loc=1)
+ax.set_xlim((0, 30))
+ax.set_ylim((0, 5e4))
+# ax.set_yscale('log')
+# -
+
+
+plt.plot(np.linspace(0, 365), beta(np.linspace(0, 365)) * 3 * 7)
