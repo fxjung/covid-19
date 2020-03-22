@@ -294,9 +294,6 @@ for task in tasks:
     for ax in axs[1]:
         ax.set_yscale("log")
 
-    for ax in axs[2]:
-        ax.set_ylim((0, ax.get_ylim()[1]))
-
     for ax_ in axs:
         for ax in ax_:
             locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
@@ -343,6 +340,9 @@ for task in tasks:
                             color="grey",
                         )
             ax.set_xlim(pd.Timestamp("2020-02-25"), xmax)
+
+    for ax in axs[2]:
+        ax.set_ylim((0, ax.get_ylim()[1]))
 
     fig.tight_layout()
     for ext in ["pdf", "png"]:
