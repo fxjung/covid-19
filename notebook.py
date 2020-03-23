@@ -189,14 +189,15 @@ for task in tasks:
         if not event_countries:
             xmax = pd.Timestamp.now() + projected_delta
         else:
-            xmax = (
+            xmax = max(
                 max(
                     pd.Timestamp(epoch)
                     for event_country in event_countries
                     for epoch, _ in events[event_country]
                 )
                 + projected_delta
-                + pd.Timedelta(days=1)
+                + pd.Timedelta(days=1),
+                pd.Timestamp.now(),
             )
     else:
         xmax = pd.Timestamp.now()
