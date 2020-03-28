@@ -26,6 +26,7 @@ import urllib.request
 import itertools as it
 import functools as ft
 import math as m
+import numba
 
 import numpy as np
 import pandas as pd
@@ -37,7 +38,7 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 
 from pathlib import Path
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, minimize
 from scipy.integrate import solve_ivp
 
 mpl.rcParams["figure.figsize"] = (8, 6)
@@ -90,14 +91,21 @@ print("\navailable files:\n" + "\n".join(map(str, sorted_paths)) + "\n")
 
 xlspath = sorted_paths[-1]
 print(f"selected file: {xlspath}")
+# -
+
+df = pd.read_excel(xlspath)
+df
+
 
 # +
-df = pd.read_excel(xlspath, parse_dates=["DateRep"])
+df = pd.read_excel(xlspath, parse_dates=["dateRep"])
 df.rename(
     {
-        "Countries and territories": "CountryExp",
-        "Cases": "NewConfCases",
-        "Deaths": "NewDeaths",
+        "countriesAndTerritories": "CountryExp",
+        "cases": "NewConfCases",
+        "deaths": "NewDeaths",
+        "dateRep": "DateRep",
+        "geoId": "GeoId",
     },
     inplace=True,
     axis=1,
@@ -160,6 +168,12 @@ tasks = [
         "interpolate": True,
         "extrapolate": True,
         "show_events": True,
+    },
+    {
+        "countries": ["United States of America"],
+        "interpolate": True,
+        "extrapolate": True,
+        #         "show_events": True,
     },
     {
         "countries": [
@@ -470,58 +484,161 @@ for ext in ["pdf", "png"]:
 # Parameters taken from https://www.dgepi.de/assets/Stellungnahmen/Stellungnahme2020Corona_DGEpi-20200319.pdf
 
 
+@numba.njit
+def seir(t, y, beta, sigma, gamma, mu, nu):
+    S = y[0]
+    E = y[1]
+    I = y[2]
+    R = y[3]
+    N = S + E + I + R
+
+    S_new = mu * (N - S) - beta * S * I / N - nu * S
+    E_new = beta * S * I / N - (mu + sigma) * E
+    I_new = sigma * E - (mu + gamma) * I
+    R_new = gamma * I - mu * R + nu * S
+    return S_new, E_new, I_new, R_new
+
+
+# # SEIR fitting (BROKEN)
+
 # +
-# beta = lambda t: (1.2 + 4.8 * np.exp(-t / 50)) / (3 * 7)
-beta = lambda t: 1.25 / 3
-sigma = 1 / 5.5
-gamma = 1 / 3
+cases = df.loc["Germany"]["total_cases"].to_numpy()
+cases = cases[np.argmax(cases != 0) :]
+
+deaths = df.loc["Germany"]["total_deaths"].to_numpy()
+deaths = deaths[np.argmax(deaths != 0) :]
+
+
+# -
+
+
+@numba.njit
+def seir(t, y, beta, sigma, gamma, mu, nu):
+    S = y[0]
+    E = y[1]
+    I = y[2]
+    R = y[3]
+    N = S + E + I + R
+
+    S_new = mu * (N - S) - beta * S * I / N - nu * S
+    E_new = beta * S * I / N - (mu + sigma) * E
+    I_new = sigma * E - (mu + gamma) * I
+    R_new = gamma * I - mu * R + nu * S
+    return S_new, E_new, I_new, R_new
+
+
+def loss(x, t0, tmax, S0, I0, R0, mu, nu, cases):
+    y0 = np.array((S0, x[3], I0, R0))
+    s = solve_ivp(
+        seir,
+        (t0, tmax),
+        y0,
+        args=(x[0], x[1], x[2], mu, nu),
+        vectorized=True,
+        dense_output=False,
+        t_eval=np.arange(0, tmax),
+    )["y"]
+
+    I = s[2]
+    R = s[3]
+    return np.linalg.norm(cases - I - R)
+
+
+# +
+beta_guess = 1.25 / 3
+sigma_guess = 1 / 5.5
+gamma_guess = 1 / 3
 mu = 0
 nu = 0
 
 S0 = 8e7
-E0 = 4e4
-I0 = 1e4
+E0_guess = 8
+I0 = 1
 R0 = 0
 
-t_max = 365
-
 t0 = 0
-y0 = np.array((S0, E0, I0, R0))
+tmax = len(cases)
 
 
-def seir(t, y):
-    S, E, I, R = y
-    N = S + E + I + R
-    return np.array(
-        (
-            mu * (N - S) - beta(t) * S * I / N - nu * S,
-            beta(t) * S * I / N - (mu + sigma) * E,
-            sigma * E - (mu + gamma) * I,
-            gamma * I - mu * R + nu * S,
-        )
-    )
-
-
-s = solve_ivp(
-    seir,
-    (t0, t_max),
-    y0,
-    vectorized=True,
-    dense_output=True,
-    t_eval=np.linspace(0, t_max, 500),
+sol = minimize(
+    loss,
+    (beta_guess, sigma_guess, gamma_guess, E0_guess),
+    #     method="Nelder-Mead",
+    callback=lambda xk: print(xk),
+    args=(t0, tmax, S0, I0, R0, mu, nu, cases),
+    options={"maxiter": 20000, "disp": True},
+    bounds=[(0.0001, None), (0.0001, None), (0.0001, None), (1, None)],
 )
 
-fig, ax = plt.subplots(figsize=(8, 6))
-plt.plot(s["t"], s["y"][0], label="S")
-plt.plot(s["t"], s["y"][1], label="E")
-plt.plot(s["t"], s["y"][2], label="I")
-plt.plot(s["t"], s["y"][3], label="R")
-ax.legend(loc=1)
-ax.set_xlim((0, t_max))
-ax.set_ylim((1000, 80e6))
-ax.set_yscale("log")
+
+# +
+# beta = lambda t: (1.2 + 4.8 * np.exp(-t / 50)) / (3 * 7)
+tmax = 365
+
+x = sol.x
+
+y0 = np.array((S0, x[3], I0, R0))
+s = solve_ivp(
+    seir,
+    (t0, tmax),
+    y0,
+    args=(x[0], x[1], x[2], mu, nu),
+    vectorized=True,
+    dense_output=True,
+    t_eval=np.arange(0, tmax),
+)
+
+
+fig, axs = plt.subplots(1, 2, figsize=(2 * 8, 6))
+for ax in axs:
+    ax.plot(s["t"], s["y"][0], label="S")
+    ax.plot(s["t"], s["y"][1], label="E")
+    ax.plot(s["t"], s["y"][2], label="I")
+    ax.plot(s["t"], s["y"][3], label="R")
+    ax.plot(cases, "gX:")
+    ax.legend(loc=1)
+    ax.set_xlim((0, tmax))
+axs[0].set_yscale("linear")
+axs[0].set_ylim((1, 1e8))
+
+axs[1].set_yscale("log")
+axs[1].set_ylim((1, 1e4))
+fig.tight_layout()
 print(f"{max(s['y'][2]):.2g}")
 # -
 
 
-plt.plot(np.linspace(0, 365), beta(np.linspace(0, 365)) * 3 * 7)
+# # LEGACY
+
+
+def solve_seir(beta, sigma, gamma, mu, nu, S0, E0, I0, R0, t0, tmax, N):
+    y0 = np.array((S0, E0, I0, R0))
+    s = solve_ivp(
+        seir,
+        (t0, tmax),
+        y0,
+        args=(beta, sigma, gamma, mu, nu),
+        vectorized=True,
+        dense_output=True,
+        t_eval=np.linspace(0, tmax, N),
+    )
+    return s["t"], s["y"]
+
+
+# +
+T, (S, E, I, R) = solve_seir(beta, sigma, gamma, mu, nu, S0, E0, I0, R0, t0, tmax)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.plot(T, S, label="S")
+ax.plot(T, E, label="E")
+ax.plot(T, I, label="I")
+ax.plot(T, R, label="R")
+ax.plot(cases)
+ax.legend(loc=1)
+# ax.set_xlim((0, 60))
+# ax.set_xlim((0, t_max))
+# ax.set_ylim((1, 80e6))
+# ax.set_ylim((1, 1e4))
+ax.set_yscale("log")
+print(f"{max(s['y'][2]):.2g}")
+# -
