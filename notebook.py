@@ -20,7 +20,6 @@ import sys
 import os
 import shutil
 import datetime
-import requests
 import urllib.request
 
 import itertools as it

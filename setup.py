@@ -31,6 +31,7 @@ setup(
         "scipy>=1.4.1",
         "jupytext",
         "pre-commit>=2.2.0",
+        "numba",
     ],
     author="Felix Jung",
     author_email="felix.jung@ds.mpg.de",
